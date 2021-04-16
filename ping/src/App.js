@@ -20,6 +20,24 @@ class Alarm {
     const minutes = this._minutes.toString().padStart(2, "0")
     return `${hours}:${minutes}`
   }
+
+  toObj() {
+    return {"h": this._hours, "m": this._minutes}
+  }
+
+  static fromObj(obj) {
+    return new Alarm(obj["h"], obj["m"])
+  }
+}
+
+function postData(route, data) {
+  return fetch(route, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: data
+  })
 }
 
 class AlarmsView extends React.Component {
@@ -33,29 +51,34 @@ class AlarmsView extends React.Component {
   componentDidMount() {
     fetch("/list")
       .then(response => {
-         console.log(response)
          return response.json()
       })
       .then(data => {
-        const alarms = data.map(obj => new Alarm(obj["h"], obj["m"]))
+        const alarms = data.map(Alarm.fromObj)
         this.setState({alarms})
       })
   }
 
   addAlarm(alarm) {
-    this.setState((state, _) => {
-      return {alarms: state.alarms.concat([alarm])
-    }})
+    postData("/add", JSON.stringify(alarm.toObj()))
+      .then(response => {
+         return response.json()
+      })
+      .then(data => {
+        const alarms = data.map(Alarm.fromObj)
+        this.setState({alarms})
+      })
   }
 
-  deleteAlarm(alarmToRemove) {
-    this.setState((state, _) => {
-      return {
-        alarms: state.alarms.filter(
-          alarm => alarm !== alarmToRemove
-        )
-      }
-    })
+  deleteAlarm(alarm) {
+    postData("/delete", JSON.stringify(alarm.toObj()))
+      .then(response => {
+         return response.json()
+      })
+      .then(data => {
+        const alarms = data.map(Alarm.fromObj)
+        this.setState({alarms})
+      })
   }
 
   render() {

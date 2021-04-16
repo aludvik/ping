@@ -1,0 +1,14 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "API for Ping",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.0"
+  },
+  "scripts": {
+    "start": "nodemon -L index.js"
+  }
+}

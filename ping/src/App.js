@@ -25,9 +25,21 @@ class Alarm {
 class AlarmsView extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {alarms: [new Alarm(1,20), new Alarm(4,0)]}
+    this.state = {alarms: []}
     this.addAlarm = this.addAlarm.bind(this)
     this.deleteAlarm = this.deleteAlarm.bind(this)
+  }
+
+  componentDidMount() {
+    fetch("/list")
+      .then(response => {
+         console.log(response)
+         return response.json()
+      })
+      .then(data => {
+        const alarms = data.map(obj => new Alarm(obj["h"], obj["m"]))
+        this.setState({alarms})
+      })
   }
 
   addAlarm(alarm) {

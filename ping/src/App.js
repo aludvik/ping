@@ -22,27 +22,55 @@ class Alarm {
   }
 }
 
-function AlarmsView() {
-  const alarms = [new Alarm(1,20), new Alarm(4,0)]
-  return (
-    <div>
-      <h1>Alarms</h1>
-      <AlarmsList alarms={alarms}/>
-      <AlarmAdder />
-    </div>
-  )
+class AlarmsView extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {alarms: [new Alarm(1,20), new Alarm(4,0)]}
+    this.addAlarm = this.addAlarm.bind(this)
+    this.deleteAlarm = this.deleteAlarm.bind(this)
+  }
+
+  addAlarm(alarm) {
+    this.setState((state, _) => {
+      return {alarms: state.alarms.concat([alarm])
+    }})
+  }
+
+  deleteAlarm(alarmToRemove) {
+    this.setState((state, _) => {
+      return {
+        alarms: state.alarms.filter(
+          alarm => alarm !== alarmToRemove
+        )
+      }
+    })
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>Alarms</h1>
+        <AlarmsList alarms={this.state.alarms} onDeleteAlarm={this.deleteAlarm} />
+        <AlarmAdder onNewAlarm={this.addAlarm} />
+      </div>
+    )
+  }
 }
 
 function AlarmsList(props) {
-  const items = props.alarms.map((alarm) =>
-    <AlarmEntry key={alarm.minutes_since_start_of_day} time={alarm.clock24_str} />
+  const items = props.alarms.map((alarm, index) =>
+    <AlarmEntry
+      key={alarm.minutes_since_start_of_day}
+      alarm={alarm}
+      onDelete={props.onDeleteAlarm}
+    />
   )
   return <ul>{items}</ul>
 }
 
 function AlarmEntry(props) {
   return (
-    <li>{props.time}<button>delete</button></li>
+    <li>{props.alarm.clock24_str}<button onClick={() => props.onDelete(props.alarm)}>delete</button></li>
   )
 }
 
@@ -50,7 +78,6 @@ class AlarmAdder extends React.Component {
   constructor(props) {
     super(props)
     this.state = {value: ''}
-
     this.handleChange = this.handleChange.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
   }
@@ -59,8 +86,28 @@ class AlarmAdder extends React.Component {
     this.setState({value: e.target.value})
   }
 
+  parseNewAlarm(value) {
+    const pattern = /^\d\d:\d\d$/
+    if (!pattern.test(value)) {
+      return null
+    }
+    const [hours, minutes] = value.split(":")
+    if (hours > 23 || hours < 0 || minutes > 59 || minutes < 0) {
+      return null
+    }
+    return new Alarm(Number(hours), Number(minutes))
+  }
+
   handleSubmit(e) {
     e.preventDefault()
+    const value = this.state.value
+    const alarm = this.parseNewAlarm(value)
+    if (alarm === null) {
+      alert("Invalid time. Use 24-hour time in the form \"XX:XX\"")
+      return
+    }
+    this.setState({value: ''})
+    this.props.onNewAlarm(alarm)
   }
 
   render() {

@@ -9,6 +9,7 @@
     "nodemon": "^2.0.0"
   },
   "scripts": {
-    "start": "nodemon -L index.js"
+    "start": "nodemon -L index.js",
+    "start-prod": "NODE_ENV=production node index.js"
   }
 }

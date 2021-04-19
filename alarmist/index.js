@@ -66,6 +66,7 @@ function shouldAlert(currentClockTime, cb) {
 
 function handleKeyPress(key, data) {
   if (audioProcess !== null) {
+    console.log(`Silenced at ${Date()}`)
     audioProcess.kill()
   }
 }

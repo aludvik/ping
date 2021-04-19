@@ -1,3 +1,4 @@
+import assert from "assert"
 import express from 'express'
 import fs from 'fs'
 
@@ -25,21 +26,26 @@ function compare(a, b) {
   return 0
 }
 
+function assertIsTime(obj) {
+  assert(obj.hasOwnProperty("h") && obj.hasOwnProperty("m"))
+}
+
 app.get("/list", (req, res) => {
   res.json(state)
 })
 
-app.post("/next", (req, res) => {
+// Is there an alarm at this time?
+app.post("/now", (req, res) => {
   const time = req.body
+  assertIsTime(time)
   for (let i = 0; i < state.length; i++) {
     const alarm = state[i]
-    if (compare(alarm, time) != -1) {
-      console.log(alarm)
-      res.json(alarm)
+    if (compare(alarm, time) == 0) {
+      res.json(true)
       return
     }
   }
-  res.json(null)
+  res.json(false)
 })
 
 app.post("/add", (req, res) => {

@@ -48,6 +48,12 @@ app.post("/now", (req, res) => {
   res.json(false)
 })
 
+function backupState(state) {
+  fs.writeFile(state_path, JSON.stringify(state), {flag: "w+"}, (err) => {
+    if (err) throw err
+  })
+}
+
 app.post("/add", (req, res) => {
   const alarm = req.body
   if (findMatch(state, alarm) !== -1) {
@@ -55,9 +61,7 @@ app.post("/add", (req, res) => {
   }
   state.push(alarm)
   state.sort(compare)
-  fs.writeFile(state_path, JSON.stringify(state), {flag: "w+"}, (err) => {
-    if (err) throw err
-  })
+  backupState(state)
   res.json(state)
 })
 
@@ -67,6 +71,7 @@ app.post("/delete", (req, res) => {
   if (index !== -1) {
     state.splice(index, 1)
   }
+  backupState(state)
   res.json(state)
 })
 

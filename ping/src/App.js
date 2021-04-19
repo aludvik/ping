@@ -31,7 +31,7 @@ class Alarm {
 }
 
 function postData(route, data) {
-  return fetch(route, {
+  return fetch(`/api/${route}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -49,7 +49,7 @@ class AlarmsView extends React.Component {
   }
 
   componentDidMount() {
-    fetch("/list")
+    fetch("/api/list")
       .then(response => {
          return response.json()
       })

@@ -15,7 +15,7 @@ onInput:
 */
 
 let audioProcess = null
-const volume = 10
+const volume = 100
 const hostname = "localhost"
 const port = 8080
 

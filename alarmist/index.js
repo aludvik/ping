@@ -15,6 +15,7 @@ onInput:
 */
 
 let audioProcess = null
+let snoozeUntil = null
 const volume = 100
 const hostname = "localhost"
 const port = 8080
@@ -36,11 +37,29 @@ function playAlert() {
   }
 }
 
+function compare(a, b) {
+  if (a["h"] < b["h"]) return -1
+  if (a["h"] > b["h"]) return 1
+  if (a["m"] < b["m"]) return -1
+  if (a["m"] > b["m"]) return 1
+  return 0
+}
+
 function dateToClockTime(date) {
   return {"h": date.getHours(), "m": date.getMinutes()}
 }
 
 function shouldAlert(currentClockTime, cb) {
+  if (snoozeUntil !== null && compare(currentClockTime, snoozeUntil) >= 0) {
+    snooozeUntil = null
+    cb(true)
+    return
+  }
+  checkApiForAlert(currentClockTime, cb)
+}
+
+
+function checkApiForAlert(currentClockTime, cb) {
   postRequest("/now", JSON.stringify(currentClockTime), cb)
 }
 
@@ -67,14 +86,26 @@ function postRequest(route, reqData, cb) {
   req.end()
 }
 
+const millisInOneMinute = 60 * 1000
+const snoozeButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 function handleKeyPress(key, data) {
   if (audioProcess !== null) {
-    console.log(`Silenced at ${Date()}`)
+    if (key in snoozeButtons) {
+      const delay = key
+      const now = new Date()
+      const snooze = new Date(now.getTime() + delay * millisInOneMinute)
+      snoozeUntil = dateToClockTime(snooze)
+      console.log(`Snoozed at ${now} until ${snooze}`)
+    } else {
+      if (snoozeUntil !== null) {
+        snoozeUntil = null
+      }
+      console.log(`Silenced at ${Date()}`)
+    }
     audioProcess.kill()
   }
 }
 
-const millisInOneMinute = 60 * 1000
 function millisUntilTopOfMinute() {
   const date = new Date()
   const millisAfter = date.getMilliseconds() + date.getSeconds() * 1000
@@ -100,6 +131,7 @@ function loop() {
 function main() {
   setUpStdin()
   setLoopTimeout()
+  console.log(`Started at ${Date()}`)
 }
 
 main()

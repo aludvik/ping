@@ -41,7 +41,10 @@ function dateToClockTime(date) {
 }
 
 function shouldAlert(currentClockTime, cb) {
-  const reqData = JSON.stringify(currentClockTime)
+  postRequest("/now", JSON.stringify(currentClockTime), cb)
+}
+
+function postRequest(route, reqData, cb) {
   let resDataBuffer = []
   const options = {
     "hostname": hostname,
@@ -49,7 +52,7 @@ function shouldAlert(currentClockTime, cb) {
       "Content-Type": "application/json",
       "Content-Length": reqData.length
     },
-    "path": "/now",
+    "path": route,
     "port": port,
     "method": "POST"
   }

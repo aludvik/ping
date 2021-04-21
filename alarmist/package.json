@@ -8,7 +8,7 @@
     "audio-speaker": "^1.5.1"
   },
   "scripts": {
-    "start": "nodemon -L index.js",
+    "start": "node index.js",
     "start-prod": "NODE_ENV=production node index.js"
   }
 }

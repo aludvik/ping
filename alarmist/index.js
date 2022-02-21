@@ -26,10 +26,15 @@ function setUpStdin() {
   process.stdin.on("keypress", handleKeyPress)
 }
 
+// only play alert if an alert isn't already playing
 function playAlert() {
   if (audioProcess === null) {
     playAudio("./alert.wav", true, _ => { audioProcess = null })
   }
+}
+
+function playHeartbeat() {
+  playAudio("./silence.wav", false, _ => {})
 }
 
 // play an audio file in a separate process and return the process
@@ -94,6 +99,15 @@ function postRequest(route, reqData, cb) {
   req.end()
 }
 
+function setHeartbeatLoop() {
+  setTimeout(heartbeatLoop, millisInOneMinute);
+}
+
+function heartbeatLoop() {
+  playHeartbeat()
+  setHeartbeatLoop()
+}
+
 const millisInOneMinute = 60 * 1000
 const snoozeButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 function handleKeyPress(key, data) {
@@ -120,11 +134,11 @@ function millisUntilTopOfMinute() {
   return millisInOneMinute - millisAfter
 }
 
-function setLoopTimeout() {
-  setTimeout(loop, millisUntilTopOfMinute())
+function setMainLoop() {
+  setTimeout(mainLoop, millisUntilTopOfMinute())
 }
 
-function loop() {
+function mainLoop() {
   const date = new Date()
   const clockTime = dateToClockTime(date)
   shouldAlert(clockTime, (should) => {
@@ -133,12 +147,13 @@ function loop() {
       playAlert()
     }
   })
-  setLoopTimeout()
+  setMainLoop()
 }
 
 function main() {
   setUpStdin()
-  setLoopTimeout()
+  setMainLoop()
+  setHeartbeatLoop()
   console.log(`Started at ${Date()}`)
 }
 

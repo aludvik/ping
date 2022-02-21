@@ -27,14 +27,22 @@ function setUpStdin() {
 }
 
 function playAlert() {
-  const command = "ffplay"
-  const flags = `-loop 0 -nodisp -volume ${volume} ./alert.wav`.split(" ")
   if (audioProcess === null) {
-    audioProcess = spawn(command, flags, {
-      stdio: 'ignore'
-    })
-    audioProcess.on('close', _ => { audioProcess = null })
+    playAudio("./alert.wav", true, _ => { audioProcess = null })
   }
+}
+
+// play an audio file in a separate process and return the process
+function playAudio(file, shouldLoop, cb) {
+  const command = "ffplay"
+  const loopFlags = `-loop 0 -nodisp -volume ${volume} ${file}`.split(" ")
+  const noLoopFlags = `-nodisp -volume ${volume} ${file}`.split(" ")
+  let flags = (shouldLoop ? loopFlags : noLoopFlags)
+  let audioProcess = spawn(command, flags, {
+    stdio: 'ignore'
+  })
+  audioProcess.on('close', cb)
+  return audioProcess
 }
 
 function compare(a, b) {

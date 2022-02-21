@@ -29,7 +29,7 @@ function setUpStdin() {
 // only play alert if an alert isn't already playing
 function playAlert() {
   if (audioProcess === null) {
-    playAudio("./alert.wav", true, _ => { audioProcess = null })
+    audioProcess = playAudio("./alert.wav", true, _ => { audioProcess = null })
   }
 }
 

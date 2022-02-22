@@ -16,7 +16,6 @@ onInput:
 
 let audioProcess = null
 let snoozeUntil = null
-const volume = 100
 const hostname = "localhost"
 const port = 8080
 
@@ -29,20 +28,18 @@ function setUpStdin() {
 // only play alert if an alert isn't already playing
 function playAlert() {
   if (audioProcess === null) {
-    audioProcess = playAudio("./alert.wav", true, _ => { audioProcess = null })
+    audioProcess = playAudio("./alert.wav", 100, _ => { audioProcess = null })
   }
 }
 
-function playHeartbeat() {
-  playAudio("./silence.wav", false, _ => {})
+function playNoise() {
+  playAudio("./noise.wav", 1, _ => {})
 }
 
 // play an audio file in a separate process and return the process
-function playAudio(file, shouldLoop, cb) {
+function playAudio(file, volume, cb) {
   const command = "ffplay"
-  const loopFlags = `-loop 0 -nodisp -volume ${volume} ${file}`.split(" ")
-  const noLoopFlags = `-nodisp -volume ${volume} ${file}`.split(" ")
-  let flags = (shouldLoop ? loopFlags : noLoopFlags)
+  const flags = `-loop 0 -nodisp -volume ${volume} ${file}`.split(" ")
   let audioProcess = spawn(command, flags, {
     stdio: 'ignore'
   })
@@ -99,15 +96,6 @@ function postRequest(route, reqData, cb) {
   req.end()
 }
 
-function setHeartbeatLoop() {
-  setTimeout(heartbeatLoop, millisInOneMinute);
-}
-
-function heartbeatLoop() {
-  playHeartbeat()
-  setHeartbeatLoop()
-}
-
 const millisInOneMinute = 60 * 1000
 const snoozeButtons = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 function handleKeyPress(key, data) {
@@ -153,7 +141,7 @@ function mainLoop() {
 function main() {
   setUpStdin()
   setMainLoop()
-  setHeartbeatLoop()
+  playNoise()
   console.log(`Started at ${Date()}`)
 }
 

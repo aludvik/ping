@@ -15,19 +15,17 @@ function loadState() {
 let state = loadState()
 
 function findMatch(state, alarm) {
-  return state.findIndex(a => a["h"] == alarm["h"] && a["m"] == alarm["m"])
+  return state.findIndex(a => a["t"] == alarm["t"])
 }
 
 function compare(a, b) {
-  if (a["h"] < b["h"]) return -1
-  if (a["h"] > b["h"]) return 1
-  if (a["m"] < b["m"]) return -1
-  if (a["m"] > b["m"]) return 1
+  if (a["t"] < b["t"]) return -1
+  if (a["t"] > b["t"]) return 1
   return 0
 }
 
 function assertIsTime(obj) {
-  assert(obj.hasOwnProperty("h") && obj.hasOwnProperty("m"))
+  assert(obj.hasOwnProperty("t"))
 }
 
 app.get("/list", (req, res) => {
@@ -77,4 +75,3 @@ app.post("/delete", (req, res) => {
 
 app.listen(public_port, () =>
   console.log(`listening at http://localhost:${public_port}`))
-

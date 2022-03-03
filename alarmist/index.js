@@ -48,15 +48,13 @@ function playAudio(file, volume, cb) {
 }
 
 function compare(a, b) {
-  if (a["h"] < b["h"]) return -1
-  if (a["h"] > b["h"]) return 1
-  if (a["m"] < b["m"]) return -1
-  if (a["m"] > b["m"]) return 1
+  if (a["t"] < b["t"]) return -1
+  if (a["t"] > b["t"]) return 1
   return 0
 }
 
 function dateToClockTime(date) {
-  return {"h": date.getHours(), "m": date.getMinutes()}
+  return {"t": date.getHours() * 60 + date.getMinutes()}
 }
 
 function shouldAlert(currentClockTime, cb) {
@@ -67,7 +65,6 @@ function shouldAlert(currentClockTime, cb) {
   }
   checkApiForAlert(currentClockTime, cb)
 }
-
 
 function checkApiForAlert(currentClockTime, cb) {
   postRequest("/now", JSON.stringify(currentClockTime), cb)

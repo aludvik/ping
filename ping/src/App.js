@@ -4,29 +4,34 @@ function App() {
   return <AlarmsView />
 }
 
-/* Alarm is minute-precision. */ 
+/* Alarm is minute-precision. */
 class Alarm {
-  constructor(hours, minutes) {
-    this._hours = hours
-    this._minutes = minutes
+  // minutes since start of the day
+  constructor(time) {
+    this._time = time
   }
 
   get minutes_since_start_of_day() {
-    return this._hours * 60 + this._minutes
+    return this._minutes
   }
 
   get clock24_str() {
-    const hours = this._hours.toString().padStart(2, "0")
-    const minutes = this._minutes.toString().padStart(2, "0")
+    let toPaddedString = n => n.toString().padStart(2, "0")
+    const hours = toPaddedString(Math.floor(this._time / 60))
+    const minutes = toPaddedString(this._time % 60)
     return `${hours}:${minutes}`
   }
 
   toObj() {
-    return {"h": this._hours, "m": this._minutes}
+    return {"t": this._time}
   }
 
   static fromObj(obj) {
-    return new Alarm(obj["h"], obj["m"])
+    return new Alarm(obj["t"])
+  }
+
+  static fromHoursAndMinutes(hours, minutes) {
+    return new Alarm(Number(hours) * 60 + Number(minutes))
   }
 }
 
@@ -130,7 +135,7 @@ class AlarmAdder extends React.Component {
     if (hours > 23 || hours < 0 || minutes > 59 || minutes < 0) {
       return null
     }
-    return new Alarm(Number(hours), Number(minutes))
+    return Alarm.fromHoursAndMinutes(hours, minutes)
   }
 
   handleSubmit(e) {

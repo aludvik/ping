@@ -3,19 +3,19 @@ import express from 'express'
 import fs from 'fs'
 
 const public_port = 8080
-const state_path = "./state.json"
+const alarms_path = "./state.json"
 
 const app = express()
 app.use(express.json())
 
-function loadState() {
-  return JSON.parse(fs.readFileSync(state_path))
+function loadAlarmsFromDisk() {
+  return JSON.parse(fs.readFileSync(alarms_path))
 }
 
-let state = loadState()
+let alarms = loadAlarmsFromDisk()
 
-function findMatch(state, alarm) {
-  return state.findIndex(a => a["t"] == alarm["t"])
+function findMatch(alarms, alarm) {
+  return alarms.findIndex(a => a["t"] == alarm["t"])
 }
 
 function compare(a, b) {
@@ -29,15 +29,15 @@ function assertIsTime(obj) {
 }
 
 app.get("/list", (req, res) => {
-  res.json(state)
+  res.json(alarms)
 })
 
 // Is there an alarm at this time?
 app.post("/now", (req, res) => {
   const time = req.body
   assertIsTime(time)
-  for (let i = 0; i < state.length; i++) {
-    const alarm = state[i]
+  for (let i = 0; i < alarms.length; i++) {
+    const alarm = alarms[i]
     if (compare(alarm, time) == 0) {
       res.json(true)
       return
@@ -46,31 +46,31 @@ app.post("/now", (req, res) => {
   res.json(false)
 })
 
-function backupState(state) {
-  fs.writeFile(state_path, JSON.stringify(state), {flag: "w+"}, (err) => {
+function backupState(alarms) {
+  fs.writeFile(alarms_path, JSON.stringify(alarms), {flag: "w+"}, (err) => {
     if (err) throw err
   })
 }
 
 app.post("/add", (req, res) => {
   const alarm = req.body
-  if (findMatch(state, alarm) !== -1) {
+  if (findMatch(alarms, alarm) !== -1) {
     return
   }
-  state.push(alarm)
-  state.sort(compare)
-  backupState(state)
-  res.json(state)
+  alarms.push(alarm)
+  alarms.sort(compare)
+  backupState(alarms)
+  res.json(alarms)
 })
 
 app.post("/delete", (req, res) => {
   const alarm = req.body
-  const index = findMatch(state, alarm)
+  const index = findMatch(alarms, alarm)
   if (index !== -1) {
-    state.splice(index, 1)
+    alarms.splice(index, 1)
   }
-  backupState(state)
-  res.json(state)
+  backupState(alarms)
+  res.json(alarms)
 })
 
 app.listen(public_port, () =>

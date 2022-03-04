@@ -12,7 +12,10 @@ function loadAlarmsFromDisk() {
   return JSON.parse(fs.readFileSync(alarms_path))
 }
 
+// list of alarm objects
 let alarms = loadAlarmsFromDisk()
+// single integer, minutes since start of today
+let snooze = null;
 
 function findMatch(alarms, alarm) {
   return alarms.findIndex(a => a["t"] == alarm["t"])
@@ -28,18 +31,28 @@ app.get("/list", (req, res) => {
   res.json(alarms)
 })
 
+function dateToClockTime(date) {
+  return {"t": date.getHours() * 60 + date.getMinutes()}
+}
+
 // Is there an alarm at this time?
 app.post("/now", (req, res) => {
   assert(req.body.hasOwnProperty("now"))
   assert(Number.isInteger(req.body["now"]))
   const date = new Date(req.body["now"])
-  const time = {"t": date.getHours() * 60 + date.getMinutes()}
+  const time = dateToClockTime(date)
   for (let i = 0; i < alarms.length; i++) {
     const alarm = alarms[i]
     if (compare(alarm, time) == 0) {
+      console.log("matches scheduled alarm")
       res.json(true)
       return
     }
+  }
+  if (snooze !== null && compare(dateToClockTime(snooze), time) == 0) {
+    console.log("matches snoozed alarm")
+    res.json(true)
+    return
   }
   res.json(false)
 })
@@ -49,6 +62,15 @@ function backupState(alarms) {
     if (err) throw err
   })
 }
+
+// Set a one-time alarm at the given time
+app.post("/snooze", (req, res) => {
+  assert(req.body.hasOwnProperty("snooze"))
+  assert(Number.isInteger(req.body["snooze"]))
+  snooze = new Date(req.body["snooze"])
+  console.log(`setting snooze for ${snooze}`)
+  res.json(true)
+})
 
 app.post("/add", (req, res) => {
   const alarm = req.body
@@ -73,3 +95,23 @@ app.post("/delete", (req, res) => {
 
 app.listen(public_port, () =>
   console.log(`listening at http://localhost:${public_port}`))
+
+const millisInOneMinute = 60 * 1000
+function cleanUpExpired() {
+  if (snooze !== null && Date.now() > snooze.getTime() + millisInOneMinute) {
+    console.log(`clearing snooze at ${snooze}`)
+    snooze = null;
+  }
+}
+
+function millisUntilTopOfMinute() {
+  const date = new Date()
+  const millisAfter = date.getMilliseconds() + date.getSeconds() * 1000
+  return millisInOneMinute - millisAfter
+}
+
+function startCleanUp() {
+  setInterval(cleanUpExpired, millisInOneMinute)
+}
+
+setTimeout(startCleanUp, millisUntilTopOfMinute() + millisInOneMinute / 2)

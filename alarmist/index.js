@@ -15,7 +15,6 @@ onInput:
 */
 
 let audioProcess = null
-let snoozeUntil = null
 const hostname = "localhost"
 const port = 8080
 
@@ -48,16 +47,11 @@ function playAudio(file, volume, cb) {
 }
 
 function shouldAlert(now, cb) {
-  if (snoozeUntil !== null && now > snoozeUntil) {
-    snooozeUntil = null
-    cb(true)
-    return
-  }
-  checkApiForAlert(now, cb)
+  postRequest("/now", JSON.stringify({"now": now}), cb)
 }
 
-function checkApiForAlert(now, cb) {
-  postRequest("/now", JSON.stringify({"now": now}), cb)
+function snoozeUntil(until, cb) {
+  postRequest("/snooze", JSON.stringify({"snooze": until}), cb)
 }
 
 function postRequest(route, reqData, cb) {
@@ -90,15 +84,19 @@ function handleKeyPress(key, data) {
     if (key in snoozeButtons) {
       const delay = key
       const now = Date.now()
-      snoozeUntil = Date(now + delay * millisInOneMinute).getTime()
-      console.log(`Snoozed at ${Date(now)} until ${Date(snoozeUntil)}`)
+      const snooze = now + delay * millisInOneMinute
+      snoozeUntil(snooze, success => {
+        if (success) {
+          console.log(`Snoozed at ${Date(now)} until ${Date(snooze)}`)
+          audioProcess.kill()
+        } else {
+          console.log("Failed to snooze")
+        }
+      })
     } else {
-      if (snoozeUntil !== null) {
-        snoozeUntil = null
-      }
       console.log(`Silenced at ${Date()}`)
+      audioProcess.kill()
     }
-    audioProcess.kill()
   }
 }
 

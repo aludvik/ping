@@ -47,27 +47,17 @@ function playAudio(file, volume, cb) {
   return audioProcess
 }
 
-function compare(a, b) {
-  if (a["t"] < b["t"]) return -1
-  if (a["t"] > b["t"]) return 1
-  return 0
-}
-
-function dateToClockTime(date) {
-  return {"t": date.getHours() * 60 + date.getMinutes()}
-}
-
-function shouldAlert(currentClockTime, cb) {
-  if (snoozeUntil !== null && compare(currentClockTime, snoozeUntil) >= 0) {
+function shouldAlert(now, cb) {
+  if (snoozeUntil !== null && now > snoozeUntil) {
     snooozeUntil = null
     cb(true)
     return
   }
-  checkApiForAlert(currentClockTime, cb)
+  checkApiForAlert(now, cb)
 }
 
-function checkApiForAlert(currentClockTime, cb) {
-  postRequest("/now", JSON.stringify(currentClockTime), cb)
+function checkApiForAlert(now, cb) {
+  postRequest("/now", JSON.stringify({"now": now}), cb)
 }
 
 function postRequest(route, reqData, cb) {
@@ -99,10 +89,9 @@ function handleKeyPress(key, data) {
   if (audioProcess !== null) {
     if (key in snoozeButtons) {
       const delay = key
-      const now = new Date()
-      const snooze = new Date(now.getTime() + delay * millisInOneMinute)
-      snoozeUntil = dateToClockTime(snooze)
-      console.log(`Snoozed at ${now} until ${snooze}`)
+      const now = Date.now()
+      snoozeUntil = Date(now + delay * millisInOneMinute).getTime()
+      console.log(`Snoozed at ${Date(now)} until ${Date(snoozeUntil)}`)
     } else {
       if (snoozeUntil !== null) {
         snoozeUntil = null
@@ -124,11 +113,10 @@ function setMainLoop() {
 }
 
 function mainLoop() {
-  const date = new Date()
-  const clockTime = dateToClockTime(date)
-  shouldAlert(clockTime, (should) => {
+  const now = Date.now()
+  shouldAlert(now, (should) => {
     if (should) {
-      console.log(`Alarm at ${date}`)
+      console.log(`Alarm at ${Date(now)}`)
       playAlert()
     }
   })

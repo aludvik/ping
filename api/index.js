@@ -24,18 +24,16 @@ function compare(a, b) {
   return 0
 }
 
-function assertIsTime(obj) {
-  assert(obj.hasOwnProperty("t"))
-}
-
 app.get("/list", (req, res) => {
   res.json(alarms)
 })
 
 // Is there an alarm at this time?
 app.post("/now", (req, res) => {
-  const time = req.body
-  assertIsTime(time)
+  assert(req.body.hasOwnProperty("now"))
+  assert(Number.isInteger(req.body["now"]))
+  const date = new Date(req.body["now"])
+  const time = {"t": date.getHours() * 60 + date.getMinutes()}
   for (let i = 0; i < alarms.length; i++) {
     const alarm = alarms[i]
     if (compare(alarm, time) == 0) {

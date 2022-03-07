@@ -65,7 +65,7 @@ class AlarmsView extends React.Component {
   }
 
   addAlarm(alarm) {
-    postData("/add", JSON.stringify(alarm.toObj()))
+    postData("/addalarm", JSON.stringify(alarm.toObj()))
       .then(response => {
          return response.json()
       })
@@ -76,7 +76,7 @@ class AlarmsView extends React.Component {
   }
 
   deleteAlarm(alarm) {
-    postData("/delete", JSON.stringify(alarm.toObj()))
+    postData("/deletealarm", JSON.stringify(alarm.toObj()))
       .then(response => {
          return response.json()
       })

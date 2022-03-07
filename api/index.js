@@ -72,7 +72,7 @@ app.post("/snooze", (req, res) => {
   res.json(true)
 })
 
-app.post("/add", (req, res) => {
+app.post("/addalarm", (req, res) => {
   const alarm = req.body
   if (findMatch(alarms, alarm) !== -1) {
     return
@@ -83,7 +83,7 @@ app.post("/add", (req, res) => {
   res.json(alarms)
 })
 
-app.post("/delete", (req, res) => {
+app.post("/deletealarm", (req, res) => {
   const alarm = req.body
   const index = findMatch(alarms, alarm)
   if (index !== -1) {

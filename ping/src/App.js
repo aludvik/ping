@@ -15,11 +15,13 @@ class Alarm {
     return this._minutes
   }
 
-  get clock24_str() {
-    let toPaddedString = n => n.toString().padStart(2, "0")
-    const hours = toPaddedString(Math.floor(this._time / 60))
-    const minutes = toPaddedString(this._time % 60)
-    return `${hours}:${minutes}`
+  get clock12_str() {
+    const hours = Math.floor(this._time / 60)
+    const minutes = this._time % 60
+    let date = new Date()
+    date.setHours(hours)
+    date.setMinutes(minutes)
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   }
 
   toObj() {
@@ -110,7 +112,7 @@ function AlarmsList(props) {
 
 function AlarmEntry(props) {
   return (
-    <li>{props.alarm.clock24_str}<button onClick={() => props.onDelete(props.alarm)}>delete</button></li>
+    <li>{props.alarm.clock12_str}<button onClick={() => props.onDelete(props.alarm)}>delete</button></li>
   )
 }
 

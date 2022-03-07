@@ -145,7 +145,7 @@ class AlarmAdder extends React.Component {
     const value = this.state.value
     const alarm = this.parseNewAlarm(value)
     if (alarm === null) {
-      alert("Invalid time. Use 24-hour time in the form \"XX:XX\"")
+      alert(`Enter time first!`)
       return
     }
     this.setState({value: ''})
@@ -156,8 +156,7 @@ class AlarmAdder extends React.Component {
     return (
       <form onSubmit={this.handleSubmit}>
         <label>
-          <input type="text" value={this.state.value} onChange={this.handleChange} />
-          (24-hour)
+          <input type="time" value={this.state.value} onChange={this.handleChange} />
         </label>
         <input type="submit" value="add" />
       </form>

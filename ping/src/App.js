@@ -12,7 +12,7 @@ class Alarm {
   }
 
   get minutes_since_start_of_day() {
-    return this._minutes
+    return this._time
   }
 
   get clock12_str() {
@@ -112,7 +112,10 @@ function AlarmsList(props) {
 
 function AlarmEntry(props) {
   return (
-    <li>{props.alarm.clock12_str}<button onClick={() => props.onDelete(props.alarm)}>delete</button></li>
+    <li key={props.alarm.minutes_since_start_of_day.toString()}>
+      {props.alarm.clock12_str}
+      <button onClick={() => props.onDelete(props.alarm)}>delete</button>
+    </li>
   )
 }
 

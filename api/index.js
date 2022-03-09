@@ -3,36 +3,83 @@ import express from 'express'
 import fs from 'fs'
 
 const public_port = 8080
-const alarms_path = "./state.json"
+const state_path = "./state.json"
 
 const app = express()
 app.use(express.json())
 
-function loadAlarmsFromDisk() {
-  return JSON.parse(fs.readFileSync(alarms_path))
+function loadStateFromDisk() {
+  return JSON.parse(fs.readFileSync(state_path))
 }
 
-// list of alarm objects
-let alarms = loadAlarmsFromDisk()
+// {
+//   alarms: list of alarm objects
+//   mutes: list of mute objefts
+// }
+let state = loadStateFromDisk()
 // single integer, minutes since start of today
 let snooze = null;
 
-function findMatch(alarms, alarm) {
-  return alarms.findIndex(a => a["t"] == alarm["t"])
+function findMatch(collection, item, compare) {
+  return collection.findIndex(i => compare(i, item) == 0)
 }
 
-function compare(a, b) {
+function containsMatch(collection, item, compare) {
+  return findMatch(collection, item, compare) !== -1
+}
+
+function compareAlarms(a, b) {
   if (a["t"] < b["t"]) return -1
   if (a["t"] > b["t"]) return 1
   return 0
 }
 
-app.get("/list", (req, res) => {
-  res.json(alarms)
+function compareMutes(a, b) {
+  if (a["s"] < b["s"]) return -1
+  if (a["s"] === b["s"]) {
+    if (a["e"] < b["e"]) return -1
+    if (a["e"] > b["e"]) return 1
+    return 0
+  }
+  return 1
+}
+
+app.get("/listalarms", (req, res) => {
+  res.json(state["alarms"])
+})
+
+app.get("/listmutes", (req, res) => {
+  res.json(state["mutes"])
 })
 
 function dateToClockTime(date) {
   return {"t": date.getHours() * 60 + date.getMinutes()}
+}
+
+function timeWithinMute(date, mute) {
+  return date >= mute["s"] && date <= mute["e"]
+}
+
+function matchesMute(date, mutes) {
+  for (let i = 0; i < mutes.length; i++) {
+    if (timeWithinMute(date, mutes[i])) {
+      return true
+    }
+  }
+  return false
+}
+
+function matchesAlarm(time, alarms) {
+  for (let i = 0; i < alarms.length; i++) {
+    if (compareAlarms(alarms[i], time) == 0) {
+      return true
+    }
+  }
+  return false
+}
+
+function matchesSnooze(time) {
+  return snooze !== null && compareAlarms(dateToClockTime(snooze), time) == 0
 }
 
 // Is there an alarm at this time?
@@ -40,16 +87,18 @@ app.post("/now", (req, res) => {
   assert(req.body.hasOwnProperty("now"))
   assert(Number.isInteger(req.body["now"]))
   const date = new Date(req.body["now"])
-  const time = dateToClockTime(date)
-  for (let i = 0; i < alarms.length; i++) {
-    const alarm = alarms[i]
-    if (compare(alarm, time) == 0) {
-      console.log("matches scheduled alarm")
-      res.json(true)
-      return
-    }
+  if (matchesMute(date, state["mutes"])) {
+    console.log("matches mute")
+    res.json(false)
+    return
   }
-  if (snooze !== null && compare(dateToClockTime(snooze), time) == 0) {
+  const time = dateToClockTime(date)
+  if (matchesAlarm(time, state["alarms"])) {
+    console.log("matches scheduled alarm")
+    res.json(true)
+    return
+  }
+  if (matchesSnooze(time)) {
     console.log("matches snoozed alarm")
     res.json(true)
     return
@@ -57,8 +106,8 @@ app.post("/now", (req, res) => {
   res.json(false)
 })
 
-function backupState(alarms) {
-  fs.writeFile(alarms_path, JSON.stringify(alarms), {flag: "w+"}, (err) => {
+function backupState(state) {
+  fs.writeFile(state_path, JSON.stringify(state), {flag: "w+"}, (err) => {
     if (err) throw err
   })
 }
@@ -74,23 +123,48 @@ app.post("/snooze", (req, res) => {
 
 app.post("/addalarm", (req, res) => {
   const alarm = req.body
-  if (findMatch(alarms, alarm) !== -1) {
+  let alarms = state["alarms"]
+  if (containsMatch(alarms, alarm, compareAlarms)) {
     return
   }
   alarms.push(alarm)
-  alarms.sort(compare)
-  backupState(alarms)
+  alarms.sort(compareAlarms)
+  backupState(state)
   res.json(alarms)
 })
 
 app.post("/deletealarm", (req, res) => {
   const alarm = req.body
-  const index = findMatch(alarms, alarm)
+  let alarms = state["alarms"]
+  const index = findMatch(alarms, alarm, compareAlarms)
   if (index !== -1) {
     alarms.splice(index, 1)
   }
-  backupState(alarms)
+  backupState(state)
   res.json(alarms)
+})
+
+app.post("/addmute", (req, res) => {
+  const mute = req.body
+  let mutes = state["mutes"]
+  if (containsMatch(mutes, mute, compareMutes)) {
+    return
+  }
+  mutes.push(mute)
+  mutes.sort(compareMutes)
+  backupState(state)
+  res.json(mutes)
+})
+
+app.post("/deletemute", (req, res) => {
+  const mute = req.body
+  let mutes = state["mutes"]
+  const index = findMatch(mutes, mute, compareMutes)
+  if (index !== -1) {
+    mutes.splice(index, 1)
+  }
+  backupState(state)
+  res.json(mutes)
 })
 
 app.listen(public_port, () =>

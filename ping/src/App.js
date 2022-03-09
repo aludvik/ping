@@ -1,7 +1,12 @@
 import React from 'react';
 
 function App() {
-  return <AlarmsView />
+  return (
+    <div>
+    <MutesView />
+    <AlarmsView />
+    </div>
+  )
 }
 
 /* Alarm is minute-precision. */
@@ -56,7 +61,7 @@ class AlarmsView extends React.Component {
   }
 
   componentDidMount() {
-    fetch("/api/list")
+    fetch("/api/listalarms")
       .then(response => {
          return response.json()
       })
@@ -160,6 +165,134 @@ class AlarmAdder extends React.Component {
       <form onSubmit={this.handleSubmit}>
         <label>
           <input type="time" value={this.state.value} onChange={this.handleChange} />
+        </label>
+        <input type="submit" value="add" />
+      </form>
+    )
+  }
+}
+
+class MutesView extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {mutes: []}
+    this.addMute = this.addMute.bind(this)
+    this.deleteMute = this.deleteMute.bind(this)
+  }
+
+  componentDidMount() {
+    fetch("/api/listmutes")
+      .then(response => {
+         return response.json()
+      })
+      .then(data => {
+        const mutes = data.map(Mute.fromObj)
+        this.setState({mutes})
+      })
+  }
+
+  addMute(mute) {
+    postData("/addmute", JSON.stringify(mute.toObj()))
+      .then(response => {
+         return response.json()
+      })
+      .then(data => {
+        const mutes = data.map(Mute.fromObj)
+        this.setState({mutes})
+      })
+  }
+
+  deleteMute(mute) {
+    postData("/deletemute", JSON.stringify(mute.toObj()))
+      .then(response => {
+         return response.json()
+      })
+      .then(data => {
+        const mutes = data.map(Mute.fromObj)
+        this.setState({mutes})
+      })
+  }
+
+  render() {
+    return (
+      <div>
+        <h1>Mutes</h1>
+        <MutesList mutes={this.state.mutes} onDeleteMute={this.deleteMute}/>
+        <MuteAdder onNewMute={this.addMute} />
+      </div>
+    )
+  }
+}
+
+class Mute {
+  constructor(start, end) {
+    this._start = new Date(start) // Date object
+    this._end = new Date(end) // Date object
+  }
+
+  get interval_str() {
+    return `${this._start.toLocaleString()} -> ${this._end.toLocaleString()}`
+  }
+
+  toObj() {
+    return {"s": this._start.getTime(), "e": this._end.getTime()}
+  }
+
+  static fromObj(obj) {
+    return new Mute(new Date(obj["s"]), new Date(obj["e"]))
+  }
+}
+
+function MutesList(props) {
+  const items = props.mutes.map((mute, index) =>
+    <li key={mute.interval_str}>
+      {mute.interval_str}
+      <button onClick={() => props.onDeleteMute(mute)}>delete</button>
+    </li>
+  )
+  return <ul>{items}</ul>
+}
+
+class MuteAdder extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {start: Date(), end: Date()}
+    this.handleStartChange = this.handleStartChange.bind(this)
+    this.handleEndChange = this.handleEndChange.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
+  }
+
+  handleStartChange(e) {
+    this.setState({start: e.target.value})
+  }
+
+  handleEndChange(e) {
+    this.setState({end: e.target.value})
+  }
+
+  handleSubmit(e) {
+    e.preventDefault()
+    const mute = new Mute(this.state.start, this.state.end)
+    this.setState({start: Date(), end: Date()})
+    this.props.onNewMute(mute)
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <label>
+          Start
+          <input
+            type="datetime-local"
+            value={this.state.start}
+            onChange={this.handleStartChange} />
+        </label>
+        <label>
+          End
+          <input
+            type="datetime-local"
+            value={this.state.end}
+            onChange={this.handleEndChange} />
         </label>
         <input type="submit" value="add" />
       </form>

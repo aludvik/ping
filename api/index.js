@@ -171,11 +171,42 @@ app.listen(public_port, () =>
   console.log(`listening at http://localhost:${public_port}`))
 
 const millisInOneMinute = 60 * 1000
-function cleanUpExpired() {
-  if (snooze !== null && Date.now() > snooze.getTime() + millisInOneMinute) {
-    console.log(`clearing snooze at ${snooze}`)
+
+function snoozeExpired(now) {
+  return snooze !== null && now > snooze.getTime() + millisInOneMinute
+}
+
+function cleanupSnooze(now) {
+  if (snoozeExpired(now)) {
     snooze = null;
+    console.log(`clear snooze: ${snooze}`)
   }
+}
+
+function muteExpired(now, mute) {
+  return now > mute["e"]
+}
+
+function cleanupMutes(now) {
+  let mutes = state["mutes"]
+  for (let i = 0; i < mutes.length; i++) {
+    let mute = mutes[i]
+    if (muteExpired(now, mute)) {
+      const index = findMatch(mutes, mute, compareMutes)
+      if (index !== -1) {
+        mutes.splice(index, 1)
+      }
+      backupState(state)
+      console.log(`cleared mute: ${mute}`)
+    }
+  }
+}
+
+function cleanUpExpired() {
+  let now = Date.now()
+  console.log(`checking for expired state at ${Date(now)}`)
+  cleanupSnooze(now)
+  cleanupMutes(now)
 }
 
 function millisUntilTopOfMinute() {
